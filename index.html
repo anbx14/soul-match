@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تقارب الأرواح</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Night-ink world with candle-gold light; single centered column like a letter */
+  --ink:#101a1f;
+  --panel:#17252c;
+  --line:#2a3d46;
+  --text:#ede6da;
+  --muted:#9fb0b3;
+  --gold:#e3b567;
+  --rose:#d98f86;
+  --display:"Aref Ruqaa", "Amiri", serif;
+  --body:"IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--ink);
+  background-image:radial-gradient(ellipse at 50% -10%, #1f3440 0%, transparent 60%);
+  color:var(--text);font-family:var(--body);font-size:17px;line-height:1.75;
+  display:flex;justify-content:center;padding:28px 16px 48px;
+}
+canvas#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+main{position:relative;z-index:1;width:100%;max-width:560px;display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;line-height:1.4}
+h1{font-size:44px;color:var(--gold);text-align:center}
+h2{font-size:28px}
+p{margin:0}
+.lede{text-align:center;color:var(--muted);max-width:44ch;margin:0 auto}
+.card{background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px;backdrop-filter:blur(4px)}
+label{font-size:14px;color:var(--muted)}
+input,textarea{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:12px;color:var(--text);font:inherit;padding:12px 14px}
+textarea{resize:vertical;min-height:84px;direction:ltr;text-align:left;font-size:13px;font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button,.btn{font:inherit;cursor:pointer;border-radius:12px;padding:12px 18px;border:1px solid var(--gold);background:var(--gold);color:#1a1408;font-weight:600;text-align:center;text-decoration:none;display:inline-block}
+button.ghost,.btn.ghost{background:transparent;color:var(--gold)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > *{flex:1 1 140px}
+.err{color:var(--rose);font-size:14px;min-height:1em}
+.hidden{display:none!important}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* quiz */
+.meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);transition:width .3s}
+.qtext{font-family:var(--display);font-size:27px;line-height:1.6;text-wrap:balance}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{background:var(--ink);color:var(--text);border:1px solid var(--line);font-weight:400;text-align:right;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.opt b{flex:0 0 28px;height:28px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:13px;color:var(--muted);font-weight:500}
+.opt:hover{border-color:var(--gold)}
+.opt.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--ink))}
+.opt.sel b{background:var(--gold);color:#1a1408;border-color:var(--gold)}
+
+/* result */
+.ring{--p:0;width:190px;height:190px;border-radius:50%;margin:4px auto;display:grid;place-items:center;
+  background:conic-gradient(var(--gold) calc(var(--p)*1%), var(--line) 0)}
+.ring div{width:158px;height:158px;border-radius:50%;background:var(--panel);display:grid;place-items:center;text-align:center}
+.ring strong{font-size:46px;font-weight:600;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums}
+.ring span{font-size:13px;color:var(--muted)}
+.tier{text-align:center;display:flex;flex-direction:column;gap:8px}
+.tier h2{color:var(--gold)}
+.names{text-align:center;color:var(--muted)}
+.cmp{display:flex;flex-direction:column;gap:12px}
+.item{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-inline-start:4px solid var(--line)}
+.item.match{border-inline-start-color:var(--gold)}
+.item .q{font-weight:500}
+.item .tag{font-size:12px;align-self:flex-start;padding:2px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.item.match .tag{border-color:var(--gold);color:var(--gold)}
+.ans{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:15px}
+.ans dt{color:var(--muted)}
+.ans dd{margin:0}
+.note{font-size:14px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+@media (max-width:420px){h1{font-size:36px}.qtext{font-size:23px}}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<main>
+
+  <!-- START -->
+  <section id="s-start" class="card" style="background:transparent;border:0;backdrop-filter:none;padding:8px 0">
+    <h1>تقارب الأرواح</h1>
+    <p class="lede">١٨ سؤال عن الوجود والحقيقة والنفس، و٤ أسئلة عن الحب. كل واحد يجاوب لحاله بصدق، وبعدين تنكشف نسبة التوافق بينكم وكل جواب جنب جواب.</p>
+  </section>
+
+  <section id="s-invite" class="card hidden">
+    <h2 id="invite-title"></h2>
+    <p class="note">جاوب أنت بعد، وأول ما تخلص بتشوفون نسبة التوافق.</p>
+  </section>
+
+  <section id="s-wait" class="card hidden" style="border-color:var(--gold)">
+    <h2 id="wait-title" style="color:var(--gold)"></h2>
+    <p class="note">لما يرسل لك رابط النتيجة، اضغط مطوّل على الرابط في الواتساب وانسخه، والصقه هنا.</p>
+    <textarea id="wait-in" placeholder="الصق رابط النتيجة هنا"></textarea>
+    <div class="err" id="wait-err"></div>
+    <button id="btn-wait">اعرض النتيجة</button>
+    <button class="ghost" id="btn-last" style="display:none">آخر نتيجة شفتها</button>
+  </section>
+
+  <section id="s-name" class="card">
+    <label for="name">اسمك</label>
+    <input id="name" maxlength="24" autocomplete="off" placeholder="اكتب اسمك">
+    <div class="err" id="name-err"></div>
+    <button id="btn-start">ابدأ</button>
+  </section>
+
+  <section id="s-code" class="card">
+    <div class="divider">وصلك رابط أو كود من الطرف الثاني؟</div>
+    <label for="code-in">الصقه هنا</label>
+    <textarea id="code-in" placeholder="https://claude.ai/artifact/..."></textarea>
+    <div class="err" id="code-err"></div>
+    <button class="ghost" id="btn-code">افتح الكود</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="s-quiz" class="card hidden">
+    <div class="meta"><span id="q-count"></span><button class="ghost" id="btn-back" style="padding:6px 14px">رجوع</button></div>
+    <div class="bar"><i id="q-bar"></i></div>
+    <p class="qtext" id="q-text"></p>
+    <div class="opts" id="q-opts"></div>
+  </section>
+
+  <!-- P1 DONE -->
+  <section id="s-share" class="card hidden">
+    <h2 style="color:var(--gold)">خلصت أجوبتك</h2>
+    <p>هذا رابطك الخاص، فيه أجوبتك مخفية. أرسله للطرف الثاني، يفتحه ويجاوب، وبعدها يرسل لك رابط النتيجة.</p>
+    <textarea id="share-code" readonly></textarea>
+    <div class="row">
+      <button id="btn-copy1">انسخ الرابط</button>
+      <a class="btn ghost" id="wa1" target="_blank" rel="noopener">أرسله واتساب</a>
+    </div>
+    <div class="note" id="copy1-msg"></div>
+    <p class="note">لما يوصلك رابط النتيجة: انسخه، وافتح اللعبة، وبتلقى خانة جاهزة فوق تلصقه فيها.</p>
+    <button class="ghost" id="btn-home1">الصفحة الأولى</button>
+  </section>
+
+  <!-- RESULT -->
+  <section id="s-result" class="hidden" style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <p class="names" id="r-names"></p>
+      <div class="ring" id="r-ring"><div><div><strong id="r-pct"></strong><br><span>توافق</span></div></div></div>
+      <div class="tier"><h2 id="r-tier"></h2><p id="r-desc"></p></div>
+    </div>
+    <div class="card" id="r-back">
+      <p>أرسل رابط النتيجة للطرف الثاني عشان يشوف نفس اللي تشوفه:</p>
+      <textarea id="result-code" readonly></textarea>
+      <div class="row">
+        <button id="btn-copy2">انسخ رابط النتيجة</button>
+        <a class="btn ghost" id="wa2" target="_blank" rel="noopener">أرسله واتساب</a>
+      </div>
+      <div class="note" id="copy2-msg"></div>
+    </div>
+    <div class="card">
+      <h2>جواب جنب جواب</h2>
+      <div class="cmp" id="r-list"></div>
+    </div>
+    <button class="ghost" id="btn-home2">العب من جديد</button>
+  </section>
+
+</main>
+
+<script>
+const Q = [
+ {q:"لو تقدر تعرف جواب سؤال واحد عن الوجود، وش تختار؟", o:["هل لحياتنا معنى مكتوب، أو إحنا نصنعه؟","وش يصير بعد ما نموت؟","هل الكون له بداية ونهاية؟","هل إحنا أحرار فعلاً في قراراتنا؟"]},
+ {q:"وش اللي يخليك أنت \"أنت\"؟", o:["ذكرياتي","أخلاقي وقيمي","روحي، شي أعمق من كل هذا","الناس اللي حولي واللي عشته معاهم"]},
+ {q:"الحقيقة في رأيك…", o:["وحدة وثابتة، وإحنا نكتشفها","كل واحد عنده حقيقته","موجودة، بس ما نوصلها كاملة أبداً","الحقيقي هو اللي ينفعنا"]},
+ {q:"لو عرضوا عليك حبة تخليك سعيد طول عمرك، بس كل اللي تعيشه بعدها وهم… تاخذها؟", o:["آخذها، السعادة سعادة","أرفض، أبي الحقيقة حتى لو تعبتني","آخذها بس لفترة وأرجع","أعطيها لأحد يحتاجها أكثر مني"]},
+ {q:"السعادة أقرب لـ…", o:["لحظات صغيرة: قهوة، ضحكة، نسمة هوا","إنجاز تتعب عليه وتوصله","سلام داخلي ما يهزه شي","ناس تحبهم حواليك"]},
+ {q:"الموت بالنسبة لك…", o:["نهاية تعطي الحياة قيمتها","بداية لشي ثاني","شي ما أحب أفكر فيه","لغز نتقبله بدون ما نفهمه"]},
+ {q:"القدر والاختيار…", o:["كل شي مكتوب","إحنا نصنع طريقنا","المكتوب هو الطريق، وإحنا نختار كيف نمشيه","ما أشغل بالي، أعيش اللحظة"]},
+ {q:"الإنسان بطبيعته…", o:["طيب، والظروف تغيّره","أناني، ويتعلم الخير","صفحة بيضاء يكتبها اللي حوله","خليط من النور والظل"]},
+ {q:"لو خيّروك بين…", o:["الصدق حتى لو جرح","اللطف حتى لو أخفى شوي من الحقيقة","الصدق، بس في الوقت المناسب","السكوت، لأنه أحياناً أصدق"]},
+ {q:"لو تقدر ترجع للماضي وتغيّر شي واحد…", o:["أرجع وأصلحه","ما أغيّر شي، كل اللي صار صنعني","أرجع بس أعيش لحظة حلوة مرة ثانية","أفضّل أشوف المستقبل بدال"]},
+ {q:"لو تقدر تعيش ألف سنة…", o:["حلم، وقت لكل شي أبيه","ملل وتعب، ما أبيها","بس إذا اللي أحبهم معي","لا، الحياة حلوة لأنها قصيرة"]},
+ {q:"وش أكثر شي يعطي حياتك معنى؟", o:["الإيمان","الناس اللي أحبهم","الشغل والإنجاز","المعرفة والفهم"]},
+ {q:"لما يختلف عقلك وقلبك…", o:["أمشي ورا عقلي دايماً","أمشي ورا قلبي دايماً","العقل في القرارات الكبيرة، والقلب في الصغيرة","أسمع الاثنين وأستنى لين يتفقون"]},
+ {q:"كيف تبيّن حبك لأحد؟", o:["بالكلام، أقول اللي أحس فيه","بالأفعال والاهتمام بالتفاصيل","بالوقت، أعطيه من وقتي","بالمفاجآت والهدايا"]},
+ {q:"لو بقت لك سنة وحدة في الحياة…", o:["أسافر وأشوف العالم","أقضيها مع اللي أحبهم","أكمّل حياتي عادي بكل هدوء","أترك أثر يبقى بعدي"]},
+ {q:"الغيرة في الحب…", o:["دليل إن الحب صادق","علامة إن الثقة ناقصة","شوي منها حلوة، وكثرها تخنق","أحس فيها بس ما أبيّنها"]},
+ {q:"الحب الحقيقي في رأيك…", o:["ينعرف من أول لحظة","ينبني بهدوء مع الوقت","قرار تختاره كل يوم","صداقة عميقة كبرت"]},
+ {q:"أهم شي في أي علاقة…", o:["الثقة","الاحترام","الضحك والخفة","التفاهم بدون كلام"]}
+];
+const LETTERS = ["أ","ب","ج","د"];
+const N = Q.length;
+const ar = n => Number(n).toLocaleString("ar-EG");
+
+const TIERS = [
+ {min:85, t:"توأم روح", d:"تفكرون بنفس الطريقة تقريباً. أغلب اللي تشوفه أنت في الحياة، يشوفه الثاني بنفس العين."},
+ {min:70, t:"تناغم جميل", d:"بينكم أرض مشتركة واسعة، والاختلافات القليلة تخلي السوالف بينكم أحلى."},
+ {min:50, t:"عالمين يكمّلون بعض", d:"تتفقون في أشياء وتختلفون في أشياء. كل واحد عنده نظرة يقدر يتعلم منها الثاني."},
+ {min:30, t:"اختلاف يفتح أبواب", d:"تشوفون الحياة من زوايا مختلفة. هذا مو شي سلبي، بس يحتاج فضول وصبر عشان تفهمون بعض."},
+ {min:0,  t:"نجمين في سماوات مختلفة", d:"نظرتكم للحياة مختلفة واجد. اقروا الأجوبة تحت وتكلموا عنها، يمكن تكتشفون شي ما توقعتوه."}
+];
+
+/* ---------- code encode/decode ---------- */
+const BASE = location.href.split("#")[0];
+const B32 = "abcdefghijklmnopqrstuvwxyz234567";
+function toB32(bytes){
+  let bits=0,val=0,out="";
+  for(const b of bytes){ val=(val<<8)|b; bits+=8; while(bits>=5){ out+=B32[(val>>>(bits-5))&31]; bits-=5; } }
+  if(bits>0) out+=B32[(val<<(5-bits))&31];
+  return out;
+}
+function fromB32(str){
+  let bits=0,val=0,out=[];
+  for(const ch of str){ const i=B32.indexOf(ch); if(i<0) throw 0; val=(val<<5)|i; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits-=8; } }
+  return new Uint8Array(out);
+}
+function enc(obj){ return "soul-" + toB32(new TextEncoder().encode(JSON.stringify(obj))); }
+function link(obj){ return BASE + "#" + enc(obj); }
+function valid(o){
+  const ok = a => typeof a==="string" && a.length===N && /^[0-3]+$/.test(a);
+  if(!o || typeof o.n!=="string" || !ok(o.a)) return null;
+  if(o.m!==undefined && (typeof o.m!=="string" || !ok(o.b))) return null;
+  return o;
+}
+function dec(text){
+  try{
+    text = String(text).replace(/\s+/g,"");
+    let m = text.match(/soul-([a-z2-7]+)/i);
+    if(m) return valid(JSON.parse(new TextDecoder().decode(fromB32(m[1].toLowerCase()))));
+    m = text.match(/SOUL-([A-Za-z0-9_-]+)/);
+    if(m){
+      let b = m[1].replace(/-/g,"+").replace(/_/g,"/"); while(b.length%4) b+="=";
+      const t = atob(b), u = new Uint8Array(t.length); for(let i=0;i<t.length;i++) u[i]=t.charCodeAt(i);
+      return valid(JSON.parse(new TextDecoder().decode(u)));
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+/* ---------- state ---------- */
+let me = "", partner = null, answers = [], idx = 0;
+const $ = id => document.getElementById(id);
+const show = (...ids) => {
+  ["s-start","s-wait","s-invite","s-name","s-code","s-quiz","s-share","s-result"].forEach(i=>$(i).classList.add("hidden"));
+  ids.forEach(i=>$(i).classList.remove("hidden"));
+  window.scrollTo({top:0});
+};
+
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem("soul-"+k)); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem("soul-"+k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem("soul-"+k); }catch(e){} }
+};
+function home(){
+  partner=null; answers=[]; idx=0;
+  $("code-in").value=""; $("code-err").textContent=""; $("name-err").textContent="";
+  $("wait-in").value=""; $("wait-err").textContent="";
+  $("btn-start").textContent="ابدأ";
+  const w = store.get("waiting"), last = store.get("last");
+  $("btn-last").style.display = last ? "block" : "none";
+  if(w || last){
+    $("wait-title").textContent = w ? "تنتظر أجوبة الطرف الثاني؟" : "عندك رابط نتيجة؟";
+    show("s-start","s-wait","s-name","s-code");
+  } else {
+    show("s-start","s-name","s-code");
+  }
+}
+$("btn-wait").onclick = () => {
+  const o = dec($("wait-in").value);
+  if(!o || o.m===undefined){ $("wait-err").textContent = o ? "هذا رابط دعوة مو رابط نتيجة. الصقه في الخانة تحت." : "الرابط مو صحيح. تأكد إنك نسخته كامل."; return; }
+  openPayload(o);
+};
+$("btn-last").onclick = () => { const o = store.get("last"); if(o) openPayload(o); };
+
+$("btn-start").onclick = () => {
+  const v = $("name").value.trim();
+  if(!v){ $("name-err").textContent="اكتب اسمك عشان يعرف الطرف الثاني منو جاوب."; return; }
+  me = v; answers = new Array(N).fill(null); idx = 0;
+  show("s-quiz"); renderQ();
+};
+
+function openPayload(o){
+  $("code-err").textContent="";
+  if(o.m!==undefined){ renderResult(o.n, o.a, o.m, o.b, false); return; }
+  partner = o;
+  $("invite-title").textContent = o.n + " جاوب وينتظرك";
+  $("btn-start").textContent = "ابدأ أجوبتي";
+  show("s-start","s-invite","s-name");
+}
+$("btn-code").onclick = () => {
+  const o = dec($("code-in").value);
+  if(!o){ $("code-err").textContent="الرابط أو الكود مو صحيح. تأكد إنك نسخته كامل."; return; }
+  openPayload(o); $("name").focus();
+};
+
+/* ---------- quiz ---------- */
+function renderQ(){
+  const q = Q[idx];
+  $("q-count").textContent = "سؤال " + ar(idx+1) + " من " + ar(N);
+  $("q-bar").style.width = ((idx)/N*100) + "%";
+  $("q-text").textContent = q.q;
+  $("btn-back").style.visibility = idx===0 ? "hidden" : "visible";
+  const box = $("q-opts"); box.innerHTML="";
+  q.o.forEach((t,i)=>{
+    const b = document.createElement("button");
+    b.className = "opt" + (answers[idx]===i ? " sel":"");
+    b.id = "opt-"+i;
+    b.innerHTML = "<b>"+LETTERS[i]+"</b><span></span>";
+    b.querySelector("span").textContent = t;
+    b.onclick = () => pick(i);
+    box.appendChild(b);
+  });
+}
+let lock=false;
+function pick(i){
+  if(lock) return; lock=true;
+  answers[idx]=i;
+  [...$("q-opts").children].forEach((c,j)=>c.classList.toggle("sel",j===i));
+  setTimeout(()=>{
+    lock=false;
+    if(idx<N-1){ idx++; renderQ(); } else finish();
+  }, 320);
+}
+$("btn-back").onclick = () => { if(idx>0){ idx--; renderQ(); } };
+
+function finish(){
+  const a = answers.join("");
+  if(partner){
+    renderResult(partner.n, partner.a, me, a, true);
+  } else {
+    const url = link({n:me, a:a});
+    store.set("waiting", {n:me, a:a});
+    $("share-code").value = url;
+    $("wa1").href = "https://wa.me/?text=" + encodeURIComponent("جاوبت أسئلة لعبة تقارب الأرواح، دورك الحين 🌙\n" + url);
+    $("copy1-msg").textContent="";
+    show("s-share");
+  }
+}
+
+/* ---------- result ---------- */
+function renderResult(n1, a1, n2, a2, showBack){
+  let same=0;
+  for(let i=0;i<N;i++) if(a1[i]===a2[i]) same++;
+  const pct = Math.round(same/N*100);
+  const tier = TIERS.find(t=>pct>=t.min);
+  store.set("last", {n:n1,a:a1,m:n2,b:a2});
+  const w = store.get("waiting"); if(w && w.a===a1) store.del("waiting");
+  $("r-names").textContent = n1 + " و " + n2;
+  $("r-pct").textContent = ar(pct) + "٪";
+  $("r-ring").style.setProperty("--p", pct);
+  $("r-tier").textContent = tier.t;
+  $("r-desc").textContent = tier.d + " اتفقتوا في " + ar(same) + " من " + ar(N) + " سؤال.";
+  const list = $("r-list"); list.innerHTML="";
+  for(let i=0;i<N;i++){
+    const m = a1[i]===a2[i];
+    const d = document.createElement("div");
+    d.className = "item" + (m?" match":"");
+    d.innerHTML = '<span class="tag"></span><div class="q"></div><dl class="ans"><dt></dt><dd></dd><dt></dt><dd></dd></dl>';
+    d.querySelector(".tag").textContent = m ? "نفس الجواب" : "مختلف";
+    d.querySelector(".q").textContent = ar(i+1) + ". " + Q[i].q;
+    const dts = d.querySelectorAll("dt"), dds = d.querySelectorAll("dd");
+    dts[0].textContent = n1; dds[0].textContent = Q[i].o[+a1[i]];
+    dts[1].textContent = n2; dds[1].textContent = Q[i].o[+a2[i]];
+    list.appendChild(d);
+  }
+  if(showBack){
+    const url = link({n:n1,a:a1,m:n2,b:a2});
+    $("result-code").value = url;
+    $("wa2").href = "https://wa.me/?text=" + encodeURIComponent("خلصت! نسبة توافقنا " + pct + "٪ ✨\nانسخ هذا الرابط والصقه في اللعبة عشان تشوف التفاصيل:\n" + url);
+    $("copy2-msg").textContent="";
+    $("r-back").classList.remove("hidden");
+  } else {
+    $("r-back").classList.add("hidden");
+  }
+  show("s-result");
+}
+
+/* ---------- copy ---------- */
+async function copyFrom(taId, msgId){
+  const ta = $(taId); let ok=false;
+  try{ await navigator.clipboard.writeText(ta.value); ok=true; }catch(e){}
+  if(!ok){ try{ ta.focus(); ta.select(); ok = document.execCommand("copy"); }catch(e){} }
+  $(msgId).textContent = ok ? "تم النسخ." : "ما قدرت أنسخ تلقائياً. الرابط متحدد، انسخه يدوي.";
+  if(!ok){ ta.focus(); ta.select(); }
+}
+$("btn-copy1").onclick = () => copyFrom("share-code","copy1-msg");
+$("btn-copy2").onclick = () => copyFrom("result-code","copy2-msg");
+$("btn-home1").onclick = home;
+$("btn-home2").onclick = home;
+$("name").addEventListener("keydown", e=>{ if(e.key==="Enter") $("btn-start").click(); });
+
+/* ---------- stars ---------- */
+(function(){
+  const c = $("stars"), x = c.getContext("2d");
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W,H,S=[];
+  function size(){
+    const r = devicePixelRatio||1;
+    W=innerWidth; H=innerHeight; c.width=W*r; c.height=H*r; x.setTransform(r,0,0,r,0,0);
+    S = Array.from({length:Math.round(W*H/9000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,p:Math.random()*6.28,s:Math.random()*.02+.005}));
+  }
+  function draw(){
+    x.clearRect(0,0,W,H);
+    S.forEach(s=>{ s.p+=s.s; x.globalAlpha = .25 + .45*(Math.sin(s.p)+1)/2; x.fillStyle="#f3dcae"; x.beginPath(); x.arc(s.x,s.y,s.r,0,6.28); x.fill(); });
+    if(!still) requestAnimationFrame(draw);
+  }
+  addEventListener("resize",()=>{size(); if(still) draw();});
+  size(); draw();
+})();
+
+function fromHash(){
+  const o = dec(decodeURIComponent(location.hash||""));
+  if(o){ partner=null; answers=[]; idx=0; openPayload(o); return true; }
+  return false;
+}
+addEventListener("hashchange", fromHash);
+home();
+fromHash();
+</script>
+</body>
+</html>
